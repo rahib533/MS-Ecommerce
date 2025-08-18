@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: ms-product
+  datasource:
+    url: jdbc:postgresql://localhost:5432/inventorydb?currentSchema=public
+    username: postgres
+    password: secret123
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 9001
+  error:
+    include-message: always
+    include-exception: true
+    include-stacktrace: always
+    include-binding-errors: always
+
+springdoc:
+  swagger-ui:
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /api-docs
