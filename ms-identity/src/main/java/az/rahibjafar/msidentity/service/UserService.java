@@ -6,9 +6,7 @@ import az.rahibjafar.msidentity.dto.converter.UserDtoConverter;
 import az.rahibjafar.msidentity.model.Role;
 import az.rahibjafar.msidentity.model.User;
 import az.rahibjafar.msidentity.repository.UserRepository;
-import az.rahibjafar.msidentity.storage.UserDb;
 import org.springframework.stereotype.Service;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;

@@ -1,13 +1,10 @@
 package az.rahibjafar.msidentity.service;
 
-import az.rahibjafar.msidentity.model.User;
-import az.rahibjafar.msidentity.repository.UserRepository;
-import com.nimbusds.jose.JOSEException;
+import az.rahibjafar.msidentity.util.JwtProps;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
-import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,10 +19,12 @@ public class AuthService {
     private final RsaKeyProvider rsaKeyProvider;
     @Value("${server.port}")
     private String serverPort;
+    private final JwtProps jwtProps;
 
-    public AuthService(UserService userService, RsaKeyProvider rsaKeyProvider) {
+    public AuthService(UserService userService, RsaKeyProvider rsaKeyProvider, JwtProps jwtProps) {
         this.userService = userService;
         this.rsaKeyProvider = rsaKeyProvider;
+        this.jwtProps = jwtProps;
     }
 
     public String getToken(String username, String password) throws Exception {
@@ -36,11 +35,11 @@ public class AuthService {
 
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
-                .issuer("http://localhost:" + serverPort)
-                .audience(List.of("service1"))
+                .issuer(jwtProps.issuer())
+                .audience(jwtProps.audience())
                 .issueTime(Date.from(now))
-                .expirationTime(Date.from(now.plusSeconds(3600)))
-                .claim("scope", "svc1.read svc1.write")
+                .expirationTime(Date.from(now.plusSeconds(jwtProps.expirySeconds())))
+                .claim("scope", jwtProps.scope())
                 .claim("roles", user.getRoles())
                 .build();
 

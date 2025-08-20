@@ -6,7 +6,6 @@ import az.rahibjafar.msidentity.model.Role;
 import az.rahibjafar.msidentity.model.User;
 import az.rahibjafar.msidentity.storage.UserDb;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.UUID;
 

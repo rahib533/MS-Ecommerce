@@ -3,7 +3,6 @@ package az.rahibjafar.msidentity.dto.converter;
 import az.rahibjafar.msidentity.dto.UserDto;
 import az.rahibjafar.msidentity.model.User;
 import org.springframework.stereotype.Component;
-
 import java.util.stream.Collectors;
 
 @Component

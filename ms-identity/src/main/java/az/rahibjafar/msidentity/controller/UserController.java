@@ -4,9 +4,7 @@ import az.rahibjafar.msidentity.dto.CreateUserRequest;
 import az.rahibjafar.msidentity.dto.UserDto;
 import az.rahibjafar.msidentity.service.UserService;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/user")
