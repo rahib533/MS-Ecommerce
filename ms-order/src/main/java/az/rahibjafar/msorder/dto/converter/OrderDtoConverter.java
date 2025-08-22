@@ -10,6 +10,7 @@ public class OrderDtoConverter {
         return new OrderDto(from.getId(),
                 from.getProductId(),
                 from.getCustomerID(),
+                from.getAccountNumber(),
                 from.getCount(),
                 from.getTotalAmount(),
                 from.getCreatedDate(),

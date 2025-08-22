@@ -30,5 +30,4 @@ public class MsOrderApplication {
     public static void main(String[] args) {
         SpringApplication.run(MsOrderApplication.class, args);
     }
-
 }

@@ -1,14 +1,10 @@
 package az.rahibjafar.msorder.service;
 
-import az.rahibjafar.msorder.dto.CreateOrderRequest;
-import az.rahibjafar.msorder.dto.CustomerDto;
-import az.rahibjafar.msorder.dto.OrderDto;
-import az.rahibjafar.msorder.dto.ProductDto;
+import az.rahibjafar.msorder.dto.*;
 import az.rahibjafar.msorder.dto.converter.OrderDtoConverter;
-import az.rahibjafar.msorder.exception.CustomerNotFoundException;
-import az.rahibjafar.msorder.exception.InvalidOrderStatusType;
-import az.rahibjafar.msorder.exception.OrderNotFoundException;
-import az.rahibjafar.msorder.exception.ProductNotFoundException;
+import az.rahibjafar.msorder.event.model.OrderCreatedEvent;
+import az.rahibjafar.msorder.event.producer.OrderEventProducer;
+import az.rahibjafar.msorder.exception.*;
 import az.rahibjafar.msorder.model.Order;
 import az.rahibjafar.msorder.model.OrderStatus;
 import az.rahibjafar.msorder.repository.OrderRepository;
@@ -25,18 +21,21 @@ public class OrderService {
     private final OrderDtoConverter orderDtoConverter;
     private final ProductClient productClient;
     private final CustomerClient customerClient;
+    private final OrderEventProducer orderEventProducer;
 
     public OrderService(
             OrderRepository orderRepository,
             OrderDtoConverter orderDtoConverter,
             ProductClient productClient,
-            CustomerClient customerClient
+            CustomerClient customerClient,
+            OrderEventProducer orderEventProducer
     )
     {
         this.orderRepository = orderRepository;
         this.orderDtoConverter = orderDtoConverter;
         this.productClient = productClient;
         this.customerClient = customerClient;
+        this.orderEventProducer = orderEventProducer;
     }
 
     public OrderDto create(final CreateOrderRequest createOrderRequest) {
@@ -44,25 +43,31 @@ public class OrderService {
         if (product == null) {
             throw new ProductNotFoundException("Product not found with id: " + createOrderRequest.getProductId());
         }
-        CustomerDto customer = customerClient.get(createOrderRequest.getCustomerID());
+        CustomerDto customer = customerClient.getCustomerById(createOrderRequest.getCustomerID());
         if (customer == null) {
             throw new CustomerNotFoundException("Customer not found with id: " + createOrderRequest.getCustomerID());
         }
+        AccountDto account = customerClient.getAccountById(createOrderRequest.getAccountId());
+        if (account == null) {
+            throw new AccountNotFoundException("Account not found with id: " + createOrderRequest.getAccountId());
+        }
 
-        Order order = new Order(createOrderRequest.getProductId(), createOrderRequest.getCustomerID(), createOrderRequest.getCount());
+        Order order = new Order(
+                createOrderRequest.getProductId(),
+                createOrderRequest.getCustomerID(),
+                account.getAccountNumber(),
+                createOrderRequest.getCount()
+        );
 
-        return orderDtoConverter.convertToOrderDto(orderRepository.save(order));
+        Order createdOrder = orderRepository.save(order);
+
+        OrderCreatedEvent orderCreatedEvent = new OrderCreatedEvent(createdOrder.getId(), createOrderRequest.getProductId(),
+                createOrderRequest.getCustomerID(), "1234567890", createOrderRequest.getCount());
+        orderEventProducer.publishOrderCreated(orderCreatedEvent);
+        return orderDtoConverter.convertToOrderDto(createdOrder);
     }
 
     public List<OrderDto> findAll() {
-        System.out.println("Product ->");
-        productClient.getAll().forEach(productDto -> {
-            System.out.println(productDto.getId() + " - " + productDto.getName());
-        });
-        System.out.println("Customer -> ");
-        customerClient.getAll().forEach(customerDto -> {
-            System.out.println(customerDto.getId() + " - " + customerDto.getFirstName());
-        });
         return orderRepository.findAll()
                 .stream()
                 .map(orderDtoConverter::convertToOrderDto)

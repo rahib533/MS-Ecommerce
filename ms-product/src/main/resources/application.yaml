@@ -13,6 +13,35 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    consumer:
+      group-id: product-orders-consumer
+      # JSON üçün:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
+      properties:
+        # JsonDeserializer üçün default type və trust:
+        spring.json.value.default.type: az.rahibjafar.msproduct.event.model.OrderCreatedEvent
+        spring.json.trusted.packages: "*"
+
+      # Yeni consumer başladıqda əvvəlki mesajları da götürmək üçün (dev):
+      auto-offset-reset: earliest
+
+      # Manual ack istifadə edəcəyik (istəyə bağlı)
+      enable-auto-commit: false
+
+    # Producer yalnız DLT-yə publish üçün lazım olacaq (retry annotasiyası ilə)
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+    # Admin (topic auto-create üçün)
+    admin:
+      auto-create: true
+
 server:
   port: 9001
   error:

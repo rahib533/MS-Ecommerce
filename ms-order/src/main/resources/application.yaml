@@ -13,6 +13,21 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    # Producer konfiqurasiyas? (JSON gönd?r?c?yik)
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        # Type header-l?ri consumer t?r?find? problem yaratmas?n dey? (ist?y? ba?l? söndürm?k olar)
+        spring.json.add.type.headers: false
+
+    # Admin client (topic-i avtomatik yaratmaq üçün)
+    admin:
+      auto-create: true
+
 server:
   port: 9003
   error:

@@ -9,6 +9,7 @@ data class OrderDto(
     val id: UUID?,
     val productId: UUID,
     val customerID: UUID,
+    val accountNumber: String,
     val count: Int,
     val totalAmount: BigDecimal?,
     val createdDate: LocalDateTime,
