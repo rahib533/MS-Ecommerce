@@ -11,7 +11,7 @@ data class Product(
     val id: UUID?,
     val name: String,
     val price: BigDecimal,
-    val stockCount: Int,
+    var stockCount: Int,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     val category: Category,

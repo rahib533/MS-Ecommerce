@@ -15,16 +15,22 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
 
-    # Producer konfiqurasiyas? (JSON gönd?r?c?yik)
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: "az.rahibjafar.*,*"
+
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
-        # Type header-l?ri consumer t?r?find? problem yaratmas?n dey? (ist?y? ba?l? söndürm?k olar)
         spring.json.add.type.headers: false
-
-    # Admin client (topic-i avtomatik yaratmaq üçün)
     admin:
       auto-create: true
 
@@ -65,3 +71,10 @@ app:
     audience: order-service
 
 
+kafka:
+  groups:
+    confrimed: order-stocks-consumer
+    cancelled: order-error-consumer
+  ids:
+    confrimed: order-confrimed-c
+    cancelled: order-cancelled-c

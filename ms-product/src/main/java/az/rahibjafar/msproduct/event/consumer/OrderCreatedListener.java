@@ -2,7 +2,10 @@ package az.rahibjafar.msproduct.event.consumer;
 
 import az.rahibjafar.msproduct.config.KafkaTopicsConfig;
 import az.rahibjafar.msproduct.dto.ProductDto;
+import az.rahibjafar.msproduct.event.model.OrderCancelledEvent;
 import az.rahibjafar.msproduct.event.model.OrderCreatedEvent;
+import az.rahibjafar.msproduct.event.model.StockReservedEvent;
+import az.rahibjafar.msproduct.event.producer.StockEventProducer;
 import az.rahibjafar.msproduct.exception.ProductNotFoundException;
 import az.rahibjafar.msproduct.exception.ProductNotInStock;
 import az.rahibjafar.msproduct.service.ProductService;
@@ -16,6 +19,7 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
+import java.math.BigDecimal;
 import java.util.logging.Logger;
 
 
@@ -23,18 +27,23 @@ import java.util.logging.Logger;
 public class OrderCreatedListener {
 
     private static final Logger log = Logger.getLogger(OrderCreatedListener.class.getName());
-
     private final ProductService productService;
+    private final StockEventProducer stockEventProducer;
 
-    public OrderCreatedListener(ProductService productService) {
+    public OrderCreatedListener(ProductService productService, StockEventProducer stockEventProducer) {
         this.productService = productService;
+        this.stockEventProducer = stockEventProducer;
     }
 
     @RetryableTopic(
             attempts = "3",
             backoff = @Backoff(delay = 1000, multiplier = 2.0),
             autoCreateTopics = "true",
-            include = { RuntimeException.class },
+            exclude = {
+                    ProductNotFoundException.class,
+                    ProductNotInStock.class
+            },
+            traversingCauses = "true",
             topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE
     )
     @KafkaListener(
@@ -52,16 +61,29 @@ public class OrderCreatedListener {
             log.info(String.format("Got order-created. key=%s, partition=%d, offset=%d, payload=%s",
                     key, record.partition(), record.offset(), event));
 
-
-            ProductDto product = productService.findById(event.productId());
+            ProductDto product = productService.getById(event.productId());
             if (product == null) {
                 ack.acknowledge();
+                stockEventProducer.publishOrderCancelled(new OrderCancelledEvent(event.orderId(),
+                        "Product not found for id " + event.productId()));
                 throw new ProductNotFoundException("Product not found for id " + event.productId());
             }
-            if (!product.getInStock()){
+            if (product.getStockCount() < event.count()){
                 ack.acknowledge();
+                stockEventProducer.publishOrderCancelled(new OrderCancelledEvent(event.orderId(),
+                        "Product not in stock for id " + event.productId() + " count: " + event.count()));
                 throw new ProductNotInStock("Product not in stock for id " + event.productId() + " count: " + event.count());
             }
+
+            productService.updateStock(product.getId(), (product.getStockCount() - event.count()));
+
+            BigDecimal totalAmount = product.getPrice().multiply(BigDecimal.valueOf(event.count()));
+
+            StockReservedEvent stockReservedEvent = new StockReservedEvent(event.orderId(), event.productId(),
+                    event.customerId(), event.accountNumber(), event.count(), totalAmount);
+
+            stockEventProducer.publishStockReserved(stockReservedEvent);
+
             ack.acknowledge();
 
         } catch (Exception ex) {

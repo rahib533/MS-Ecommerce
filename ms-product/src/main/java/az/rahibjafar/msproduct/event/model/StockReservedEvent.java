@@ -1,13 +1,14 @@
 package az.rahibjafar.msproduct.event.model;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
-public record OrderCreatedEvent(
+public record StockReservedEvent(
         UUID orderId,
         UUID productId,
         UUID customerId,
         String accountNumber,
-        Integer count
-)
-{
+        Integer count,
+        BigDecimal totalAmount
+) {
 }

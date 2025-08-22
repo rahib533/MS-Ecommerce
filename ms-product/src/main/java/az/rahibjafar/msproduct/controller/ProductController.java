@@ -24,7 +24,7 @@ public class ProductController {
 
     @GetMapping("get/{id}")
     public ProductDto get(@PathVariable UUID id) {
-        return productService.findById(id);
+        return productService.getById(id);
     }
 
     @PostMapping("/create")
