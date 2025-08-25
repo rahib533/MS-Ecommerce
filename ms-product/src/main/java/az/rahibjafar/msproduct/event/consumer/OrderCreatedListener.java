@@ -63,15 +63,15 @@ public class OrderCreatedListener {
 
             ProductDto product = productService.getById(event.productId());
             if (product == null) {
-                ack.acknowledge();
                 stockEventProducer.publishOrderCancelled(new OrderCancelledEvent(event.orderId(),
                         "Product not found for id " + event.productId()));
+                ack.acknowledge();
                 throw new ProductNotFoundException("Product not found for id " + event.productId());
             }
             if (product.getStockCount() < event.count()){
-                ack.acknowledge();
                 stockEventProducer.publishOrderCancelled(new OrderCancelledEvent(event.orderId(),
                         "Product not in stock for id " + event.productId() + " count: " + event.count()));
+                ack.acknowledge();
                 throw new ProductNotInStock("Product not in stock for id " + event.productId() + " count: " + event.count());
             }
 

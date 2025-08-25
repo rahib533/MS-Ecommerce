@@ -1,7 +1,6 @@
 package az.rahibjafar.msorder.model
 
 import jakarta.persistence.*
-import org.apache.kafka.common.protocol.types.Field.Str
 import org.hibernate.annotations.CreationTimestamp
 import java.math.BigDecimal
 import java.time.LocalDateTime
