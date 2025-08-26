@@ -1,0 +1,207 @@
+version: "3.9"
+services:
+  eureka:
+    build:
+      context: ./ms-eureka-server
+      dockerfile: Dockerfile
+    image: ms-eureka-server:1.0
+    container_name: eureka
+    ports:
+      - "8761:8761"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8761/ > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: kafka
+    ports:
+      - "9092:29092"
+    environment:
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:29092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    volumes:
+      - kafka_data:/bitnami/kafka
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8087:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+    depends_on:
+      - kafka
+
+  postgres:
+    image: postgres:latest
+    container_name: multi-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret123
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  identity:
+    build:
+      context: ./ms-identity
+      dockerfile: Dockerfile
+    image: ms-identity:1.0
+    container_name: identity
+    ports:
+      - "9000:9000"
+    restart: unless-stopped
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka
+      - SPRING_APPLICATION_NAME=ms-identity
+      - SERVER_PORT=9000
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+    depends_on:
+      eureka:
+        condition: service_healthy
+
+  ms-order:
+    build:
+      context: ./ms-order
+      dockerfile: Dockerfile
+    image: ms-order:1.0
+    container_name: ms-order
+    ports:
+      - "9003:9003"
+    restart: unless-stopped
+    environment:
+      - SPRING_APPLICATION_NAME=ms-order
+      - SERVER_PORT=9003
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/orderdb?currentSchema=public
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=secret123
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_SHOW_SQL=true
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - APP_SECURITY_AUDIENCE=order-service
+      - KAFKA_GROUPS_RESERVED=order-stocks-consumer
+      - KAFKA_IDS_RESERVED=order-reserved-c
+    depends_on:
+      eureka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  ms-product:
+    build:
+      context: ./ms-product
+      dockerfile: Dockerfile
+    image: ms-product:1.0
+    container_name: ms-product
+    ports:
+      - "9001:9001"
+    restart: unless-stopped
+    environment:
+      - SPRING_APPLICATION_NAME=ms-product
+      - SERVER_PORT=9001
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/inventorydb?currentSchema=public
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=secret123
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_SHOW_SQL=true
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - APP_SECURITY_AUDIENCE=product-service
+    depends_on:
+      eureka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+  
+  ms-customer:
+    build:
+      context: ./ms-customer
+      dockerfile: Dockerfile
+    image: ms-customer:1.0
+    container_name: ms-customer
+    ports:
+      - "9002:9002"
+    restart: unless-stopped
+    environment:
+      - SPRING_APPLICATION_NAME=ms-customer
+      - SERVER_PORT=9002
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/customerdb?currentSchema=public
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=secret123
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_SHOW_SQL=true
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - APP_SECURITY_AUDIENCE=customer-service
+    depends_on:
+      eureka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  ms-payment:
+    build:
+      context: ./ms-payment
+      dockerfile: Dockerfile
+    image: ms-payment:1.0
+    container_name: ms-payment
+    ports:
+      - "9004:9004"
+    restart: unless-stopped
+    environment:
+      - SPRING_APPLICATION_NAME=ms-payment
+      - SERVER_PORT=9004
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/paymentdb?currentSchema=public
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=secret123
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_SHOW_SQL=true
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
+      - APP_SECURITY_AUDIENCE=payment-service
+    depends_on:
+      eureka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+volumes:
+  kafka_data:
