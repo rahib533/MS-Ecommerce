@@ -25,6 +25,7 @@ data class Order(
     @CreationTimestamp
     val createdDate: LocalDateTime,
     var confirmedDate: LocalDateTime?,
+    var reservedDate: LocalDateTime?,
     var cancelledDate: LocalDateTime?,
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -39,12 +40,14 @@ data class Order(
         totalAmount = null,
         createdDate = LocalDateTime.now(),
         confirmedDate = null,
+        reservedDate = null,
         cancelledDate = null,
         status = OrderStatus.PENDING,
     )
 
     constructor(
         productId: UUID, customerID: UUID, accountNumber: String, count: Int) : this(
-        null, productId, customerID, accountNumber, count, null, LocalDateTime.now(), null, null, OrderStatus.PENDING
+        null, productId, customerID, accountNumber, count, null, LocalDateTime.now(),
+        null, null, null, OrderStatus.PENDING
     )
 }

@@ -14,6 +14,7 @@ data class OrderDto(
     val totalAmount: BigDecimal?,
     val createdDate: LocalDateTime,
     val confirmedDate: LocalDateTime?,
+    var reservedDate: LocalDateTime?,
     val cancelledDate: LocalDateTime?,
     val status: OrderStatus,
 ){

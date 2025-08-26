@@ -3,6 +3,8 @@ package az.rahibjafar.mspayment.service;
 import az.rahibjafar.mspayment.dto.CreatePaymentRequest;
 import az.rahibjafar.mspayment.dto.PaymentDto;
 import az.rahibjafar.mspayment.dto.converter.PaymentDtoConverter;
+import az.rahibjafar.mspayment.event.model.PaymentCreatedEvent;
+import az.rahibjafar.mspayment.event.producer.PaymentEventProducer;
 import az.rahibjafar.mspayment.exception.InvalidPaymentStatusType;
 import az.rahibjafar.mspayment.exception.PaymentNotFoundException;
 import az.rahibjafar.mspayment.model.Payment;
@@ -19,10 +21,15 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentDtoConverter paymentDtoConverter;
+    private final PaymentEventProducer paymentEventProducer;
 
-    public PaymentService(PaymentRepository paymentRepository, PaymentDtoConverter paymentDtoConverter) {
+    public PaymentService(PaymentRepository paymentRepository,
+                          PaymentDtoConverter paymentDtoConverter,
+                          PaymentEventProducer paymentEventProducer
+    ) {
         this.paymentRepository = paymentRepository;
         this.paymentDtoConverter = paymentDtoConverter;
+        this.paymentEventProducer = paymentEventProducer;
     }
 
     public List<PaymentDto> findAll() {
@@ -68,6 +75,18 @@ public class PaymentService {
                 createPaymentRequest.getTotalAmount()
         );
 
-        return paymentDtoConverter.convertToOrderDto(paymentRepository.save(payment));
+        PaymentDto paymentDto = paymentDtoConverter.convertToOrderDto(paymentRepository.save(payment));
+
+        PaymentCreatedEvent paymentCreatedEvent = new PaymentCreatedEvent(
+                paymentDto.getId(),
+                paymentDto.getOrderId(),
+                paymentDto.getFromAccountNumber(),
+                paymentDto.getToAccountNumber(),
+                paymentDto.getTotalAmount()
+        );
+
+        paymentEventProducer.publishPaymentCreated(paymentCreatedEvent);
+
+        return paymentDto;
     }
 }

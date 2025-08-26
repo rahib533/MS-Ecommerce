@@ -1,12 +1,11 @@
 package az.rahibjafar.msorder.event.consumer;
 
-import az.rahibjafar.msorder.event.model.OrderCancelledEvent;
-import az.rahibjafar.msorder.event.model.StockReservedEvent;
+import az.rahibjafar.msorder.config.KafkaTopicsConfig;
+import az.rahibjafar.msorder.event.model.PaymentCancelledEvent;
+import az.rahibjafar.msorder.event.model.PaymentCompletedEvent;
 import az.rahibjafar.msorder.model.OrderStatus;
 import az.rahibjafar.msorder.service.OrderService;
-import az.rahibjafar.msorder.config.KafkaTopicsConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.retrytopic.TopicSuffixingStrategy;
@@ -20,12 +19,12 @@ import java.util.logging.Logger;
 
 
 @Component
-public class StockReservedListener {
+public class PaymentListener {
 
-    private static final Logger log = Logger.getLogger(StockReservedListener.class.getName());
+    private static final Logger log = Logger.getLogger(PaymentListener.class.getName());
     private final OrderService orderService;
 
-    public StockReservedListener(OrderService orderService) {
+    public PaymentListener(OrderService orderService) {
         this.orderService = orderService;
     }
 
@@ -37,19 +36,19 @@ public class StockReservedListener {
             topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE
     )
     @KafkaListener(
-            id = "${kafka.ids.confrimed}",
-            topics = KafkaTopicsConfig.STOCKS_RESERVED_TOPIC,
-            groupId = "${kafka.groups.confrimed}",
-            containerFactory = "stockReservedEventFactory",
+            id = "${kafka.ids.completed}",
+            topics = KafkaTopicsConfig.PAYMENT_COMPLETED_TOPIC,
+            groupId = "${kafka.groups.completed}",
+            containerFactory = "paymentCompletedEventFactory",
             properties = {
-                    "spring.json.value.default.type=az.rahibjafar.msorder.event.model.StockReservedEvent",
+                    "spring.json.value.default.type=az.rahibjafar.msorder.event.model.PaymentCompletedEvent",
                     "spring.json.use.type.headers=false"
             }
     )
-    public void onStockReserved(
-            @Payload StockReservedEvent event,
+    public void onPaymentCompleted(
+            @Payload PaymentCompletedEvent event,
             @Header(KafkaHeaders.RECEIVED_KEY) String key,
-            ConsumerRecord<String, StockReservedEvent> record,
+            ConsumerRecord<String, PaymentCompletedEvent> record,
             Acknowledgment ack
     ) {
         try {
@@ -57,7 +56,6 @@ public class StockReservedListener {
                     key, record.partition(), record.offset(), event));
 
             orderService.updateStatus(OrderStatus.CONFIRMED, event.orderId());
-            orderService.updateTotalAmount(event.totalAmount(), event.orderId());
 
             ack.acknowledge();
 
@@ -74,19 +72,19 @@ public class StockReservedListener {
             topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE
     )
     @KafkaListener(
-            id = "${kafka.ids.cancelled}",
-            topics = KafkaTopicsConfig.ORDERS_CANCELLED_TOPIC,
-            groupId = "${kafka.groups.cancelled}",
-            containerFactory = "orderCancelledEventFactory",
+            id = "${kafka.ids.cancelledPayment}",
+            topics = KafkaTopicsConfig.PAYMENT_CANCELLED_TOPIC,
+            groupId = "${kafka.groups.cancelledPayment}",
+            containerFactory = "paymentCancelledEventFactory",
             properties = {
-                    "spring.json.value.default.type=az.rahibjafar.msorder.event.model.OrderCancelledEvent",
+                    "spring.json.value.default.type=az.rahibjafar.msorder.event.model.PaymentCancelledEvent",
                     "spring.json.use.type.headers=false"
             }
     )
-    public void onOrderCancelled(
-            @Payload OrderCancelledEvent event,
+    public void onPaymentCancelled(
+            @Payload PaymentCancelledEvent event,
             @Header(KafkaHeaders.RECEIVED_KEY) String key,
-            ConsumerRecord<String, OrderCancelledEvent> record,
+            ConsumerRecord<String, PaymentCancelledEvent> record,
             Acknowledgment ack
     ) {
         try {

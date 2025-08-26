@@ -15,6 +15,7 @@ public class OrderDtoConverter {
                 from.getTotalAmount(),
                 from.getCreatedDate(),
                 from.getConfirmedDate(),
+                from.getReservedDate(),
                 from.getCancelledDate(),
                 from.getStatus()
         );

@@ -93,6 +93,10 @@ public class OrderService {
                 order.setStatus(OrderStatus.CONFIRMED);
                 order.setConfirmedDate(LocalDateTime.now());
             }
+            case RESERVED -> {
+                order.setStatus(OrderStatus.RESERVED);
+                order.setReservedDate(LocalDateTime.now());
+            }
             case CANCELLED ->{
                 order.setStatus(OrderStatus.CANCELLED);
                 order.setCancelledDate(LocalDateTime.now());

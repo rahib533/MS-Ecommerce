@@ -11,7 +11,7 @@ data class Account(
     val id: UUID?,
     @Column(unique = true, nullable = false)
     val accountNumber: String,
-    val balance: BigDecimal,
+    var balance: BigDecimal,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
     val customer: Customer

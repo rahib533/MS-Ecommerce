@@ -88,13 +88,22 @@ public class SecurityConfig {
     }
 
     @Bean
-    Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter() {
+    Converter<Jwt, JwtAuthenticationToken> jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter scopes = new JwtGrantedAuthoritiesConverter();
         scopes.setAuthoritiesClaimName("scope");
         scopes.setAuthorityPrefix("SCOPE_");
-        return jwt -> new JwtAuthenticationToken(jwt, scopes.convert(jwt),
-                Optional.ofNullable(jwt.getClaimAsString("preferred_username"))
-                        .orElseGet(() -> Optional.ofNullable(jwt.getClaimAsString("email"))
-                                .orElse(jwt.getSubject())));
+
+        return new Converter<Jwt, JwtAuthenticationToken>() {
+            @Override
+            public JwtAuthenticationToken convert(Jwt jwt) {
+                return new JwtAuthenticationToken(
+                        jwt,
+                        scopes.convert(jwt),
+                        Optional.ofNullable(jwt.getClaimAsString("preferred_username"))
+                                .orElseGet(() -> Optional.ofNullable(jwt.getClaimAsString("email"))
+                                        .orElse(jwt.getSubject()))
+                );
+            }
+        };
     }
 }

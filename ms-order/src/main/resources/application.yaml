@@ -73,8 +73,12 @@ app:
 
 kafka:
   groups:
-    confrimed: order-stocks-consumer
-    cancelled: order-error-consumer
+    reserved: order-stocks-consumer
+    cancelled: order-error-consumer,
+    completed: order-completed-consumer
+    cancelledPayment: order-cancelled-consumer
   ids:
-    confrimed: order-confrimed-c
+    reserved: order-reserved-c
     cancelled: order-cancelled-c
+    completed: order-completed-c
+    cancelledPayment: order-cancelledPayment-c

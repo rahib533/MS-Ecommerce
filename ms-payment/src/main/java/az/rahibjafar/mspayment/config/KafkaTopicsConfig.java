@@ -1,4 +1,4 @@
-package az.rahibjafar.msorder.config;
+package az.rahibjafar.mspayment.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;
@@ -6,20 +6,14 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class KafkaTopicsConfig {
-    public static final String ORDERS_CREATED_TOPIC = "orders.created";
     public static final String STOCKS_RESERVED_TOPIC = "stocks.reserved";
-    public static final String ORDERS_CANCELLED_TOPIC = "orders.cancelled";
+    public static final String PAYMENT_CREATED_TOPIC = "payment.created";
     public static final String PAYMENT_COMPLETED_TOPIC = "payment.completed";
     public static final String PAYMENT_CANCELLED_TOPIC = "payment.cancelled";
     public static final String STOCKS_RESERVED_DLT = "stocks.reserved.DLT";
-    public static final String ORDERS_CANCELLED_DLT = "orders.cancelled.DLT";
+    public static final String PAYMENT_CREATED_DLT = "payment.created.DLT";
     public static final String PAYMENT_COMPLETED_DLT = "payment.completed.DLT";
     public static final String PAYMENT_CANCELLED_DLT = "payment.cancelled.DLT";
-
-    @Bean
-    public NewTopic ordersCreatedTopic() {
-        return new NewTopic(ORDERS_CREATED_TOPIC, 1, (short) 1);
-    }
 
     @Bean
     public NewTopic stocksReservedTopic() {
@@ -32,23 +26,13 @@ public class KafkaTopicsConfig {
     }
 
     @Bean
-    public NewTopic orderCancelledTopic() {
-        return new NewTopic(ORDERS_CANCELLED_TOPIC, 1, (short) 1);
+    public NewTopic paymentCreatedTopic() {
+        return new NewTopic(PAYMENT_CREATED_TOPIC, 1, (short) 1);
     }
 
     @Bean
-    public NewTopic orderCancelledDlt() {
-        return new NewTopic(ORDERS_CANCELLED_DLT, 1, (short) 1);
-    }
-
-    @Bean
-    public NewTopic paymentCompletedTopic() {
-        return new NewTopic(PAYMENT_COMPLETED_TOPIC, 1, (short) 1);
-    }
-
-    @Bean
-    public NewTopic paymentCompletedDlt() {
-        return new NewTopic(PAYMENT_COMPLETED_DLT, 1, (short) 1);
+    public NewTopic paymentCreatedDlt() {
+        return new NewTopic(PAYMENT_CREATED_DLT, 1, (short) 1);
     }
 
     @Bean
