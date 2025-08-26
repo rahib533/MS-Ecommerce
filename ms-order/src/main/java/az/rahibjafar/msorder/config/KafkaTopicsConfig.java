@@ -11,10 +11,12 @@ public class KafkaTopicsConfig {
     public static final String ORDERS_CANCELLED_TOPIC = "orders.cancelled";
     public static final String PAYMENT_COMPLETED_TOPIC = "payment.completed";
     public static final String PAYMENT_CANCELLED_TOPIC = "payment.cancelled";
+    public static final String STOCKS_ROLLBACK_TOPIC = "stocks.rollback";
     public static final String STOCKS_RESERVED_DLT = "stocks.reserved.DLT";
     public static final String ORDERS_CANCELLED_DLT = "orders.cancelled.DLT";
     public static final String PAYMENT_COMPLETED_DLT = "payment.completed.DLT";
     public static final String PAYMENT_CANCELLED_DLT = "payment.cancelled.DLT";
+    public static final String STOCKS_ROLLBACK_DLT = "stocks.rollback.DLT";
 
     @Bean
     public NewTopic ordersCreatedTopic() {
@@ -59,5 +61,15 @@ public class KafkaTopicsConfig {
     @Bean
     public NewTopic paymentCancelledDlt() {
         return new NewTopic(PAYMENT_CANCELLED_DLT, 1, (short) 1);
+    }
+
+    @Bean
+    public NewTopic stocksRollbackTopic() {
+        return new NewTopic(STOCKS_ROLLBACK_TOPIC, 1, (short) 1);
+    }
+
+    @Bean
+    public NewTopic stocksRollbackDlt() {
+        return new NewTopic(STOCKS_ROLLBACK_DLT, 1, (short) 1);
     }
 }

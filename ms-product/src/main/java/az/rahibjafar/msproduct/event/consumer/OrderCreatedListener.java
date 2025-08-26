@@ -5,9 +5,11 @@ import az.rahibjafar.msproduct.dto.ProductDto;
 import az.rahibjafar.msproduct.event.model.OrderCancelledEvent;
 import az.rahibjafar.msproduct.event.model.OrderCreatedEvent;
 import az.rahibjafar.msproduct.event.model.StockReservedEvent;
+import az.rahibjafar.msproduct.event.model.StockRollbackEvent;
 import az.rahibjafar.msproduct.event.producer.StockEventProducer;
 import az.rahibjafar.msproduct.exception.ProductNotFoundException;
 import az.rahibjafar.msproduct.exception.ProductNotInStock;
+import az.rahibjafar.msproduct.model.Product;
 import az.rahibjafar.msproduct.service.ProductService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -47,11 +49,16 @@ public class OrderCreatedListener {
             topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE
     )
     @KafkaListener(
+            id = "${kafka.ids.created}",
             topics = KafkaTopicsConfig.ORDERS_CREATED_TOPIC,
-            groupId = "${spring.kafka.consumer.group-id}",
-            containerFactory = "kafkaListenerContainerFactory"
+            groupId = "${kafka.groups.created}",
+            containerFactory = "orderCreatedEventFactory",
+            properties = {
+                    "spring.json.value.default.type=az.rahibjafar.msproduct.event.model.OrderCreatedEvent",
+                    "spring.json.use.type.headers=false"
+            }
     )
-    public void onMessage(
+    public void onOrderCreated(
             @Payload OrderCreatedEvent event,
             @Header(KafkaHeaders.RECEIVED_KEY) String key,
             ConsumerRecord<String, OrderCreatedEvent> record,
@@ -83,6 +90,45 @@ public class OrderCreatedListener {
                     event.customerId(), event.accountNumber(), event.count(), totalAmount);
 
             stockEventProducer.publishStockReserved(stockReservedEvent);
+
+            ack.acknowledge();
+
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    @RetryableTopic(
+            attempts = "3",
+            backoff = @Backoff(delay = 1000, multiplier = 2.0),
+            autoCreateTopics = "true",
+            exclude = {
+                    ProductNotFoundException.class
+            },
+            traversingCauses = "true",
+            topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE
+    )
+    @KafkaListener(
+            id = "${kafka.ids.cancelled}",
+            topics = KafkaTopicsConfig.STOCKS_ROLLBACK_TOPIC,
+            groupId = "${kafka.groups.cancelled}",
+            containerFactory = "stocksRollbackEventFactory",
+            properties = {
+                    "spring.json.value.default.type=az.rahibjafar.msproduct.event.model.StockRollbackEvent",
+                    "spring.json.use.type.headers=false"
+            }
+    )
+    public void onStocksRollback(
+            @Payload StockRollbackEvent event,
+            @Header(KafkaHeaders.RECEIVED_KEY) String key,
+            ConsumerRecord<String, StockRollbackEvent> record,
+            Acknowledgment ack
+    ) {
+        try {
+            log.info(String.format("Got order-created. key=%s, partition=%d, offset=%d, payload=%s",
+                    key, record.partition(), record.offset(), event));
+
+            productService.stockRollback(event.productId(), event.count());
 
             ack.acknowledge();
 

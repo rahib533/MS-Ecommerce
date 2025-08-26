@@ -9,9 +9,11 @@ public class KafkaTopicsConfig {
     public static final String ORDERS_CREATED_TOPIC = "orders.created";
     public static final String STOCKS_RESERVED_TOPIC = "stocks.reserved";
     public static final String ORDERS_CANCELLED_TOPIC = "orders.cancelled";
+    public static final String STOCKS_ROLLBACK_TOPIC = "stocks.rollback";
     public static final String ORDERS_CREATED_DLT = "orders.created.DLT";
     public static final String STOCKS_RESERVED_DLT = "stocks.reserved.DLT";
     public static final String ORDERS_CANCELLED_DLT = "orders.cancelled.DLT";
+    public static final String STOCKS_ROLLBACK_DLT = "stocks.rollback.DLT";
 
     @Bean
     public NewTopic ordersCreatedTopic() {
@@ -41,5 +43,15 @@ public class KafkaTopicsConfig {
     @Bean
     public NewTopic orderCancelledDlt() {
         return new NewTopic(ORDERS_CANCELLED_DLT, 1, (short) 1);
+    }
+
+    @Bean
+    public NewTopic stocksRollbackTopic() {
+        return new NewTopic(STOCKS_ROLLBACK_TOPIC, 1, (short) 1);
+    }
+
+    @Bean
+    public NewTopic stocksRollbackDlt() {
+        return new NewTopic(STOCKS_ROLLBACK_DLT, 1, (short) 1);
     }
 }

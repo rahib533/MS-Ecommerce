@@ -62,4 +62,10 @@ public class ProductService {
         product.setStockCount(stock);
         return productDtoConverter.convertToProductDto(productRepository.save(product));
     }
+
+    public void stockRollback(UUID id, Integer count) {
+        Product product = findById(id);
+        product.setStockCount(product.getStockCount() + count);
+        productRepository.save(product);
+    }
 }

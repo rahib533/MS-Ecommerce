@@ -91,7 +91,7 @@ public class PaymentListener {
             log.info(String.format("Got stocks-reserved. key=%s, partition=%d, offset=%d, payload=%s",
                     key, record.partition(), record.offset(), event));
 
-            orderService.updateStatus(OrderStatus.CANCELLED, event.orderId());
+            orderService.cancelOrderWithStockRollback(event.orderId(), event.message());
 
             ack.acknowledge();
 

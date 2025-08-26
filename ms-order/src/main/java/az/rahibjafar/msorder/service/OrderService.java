@@ -3,6 +3,7 @@ package az.rahibjafar.msorder.service;
 import az.rahibjafar.msorder.dto.*;
 import az.rahibjafar.msorder.dto.converter.OrderDtoConverter;
 import az.rahibjafar.msorder.event.model.OrderCreatedEvent;
+import az.rahibjafar.msorder.event.model.StockRollbackEvent;
 import az.rahibjafar.msorder.event.producer.OrderEventProducer;
 import az.rahibjafar.msorder.exception.*;
 import az.rahibjafar.msorder.model.Order;
@@ -103,6 +104,24 @@ public class OrderService {
             }
             default -> throw new InvalidOrderStatusType("Invalid order status");
         }
+        return orderDtoConverter.convertToOrderDto(orderRepository.save(order));
+    }
+
+    public OrderDto cancelOrderWithStockRollback(UUID id, String message) {
+        Order order = findById(id);
+
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setCancelledDate(LocalDateTime.now());
+
+        orderEventProducer.publishStocksRollback(
+                new StockRollbackEvent(
+                        order.getId(),
+                        order.getProductId(),
+                        order.getCount(),
+                        message
+                )
+        );
+
         return orderDtoConverter.convertToOrderDto(orderRepository.save(order));
     }
 
