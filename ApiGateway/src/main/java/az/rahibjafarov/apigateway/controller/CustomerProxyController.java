@@ -26,9 +26,8 @@ public class CustomerProxyController {
         this.webClientBuilder = webClientBuilder;
     }
 
-    @GetMapping("/customers")
-    public Mono<ResponseEntity<String>> getAllCustomers(ServerHttpRequest incoming) {
-        System.out.println("getAllCustomers called");
+    @GetMapping("/accounts")
+    public Mono<ResponseEntity<String>> getAllAccounts(ServerHttpRequest incoming) {
         String auth = incoming.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         return webClientBuilder.build()
@@ -40,7 +39,24 @@ public class CustomerProxyController {
                     }
                 })
                 .exchangeToMono(resp ->
-                        resp.toEntity(String.class) // status + headers + body
+                        resp.toEntity(String.class)
+                );
+    }
+
+    @GetMapping("/customers")
+    public Mono<ResponseEntity<String>> getAllCustomers(ServerHttpRequest incoming) {
+        String auth = incoming.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+
+        return webClientBuilder.build()
+                .get()
+                .uri("lb://ms-customer/v1/customer/getAll")
+                .headers(h -> {
+                    if (auth != null && !auth.isBlank()) {
+                        h.set(HttpHeaders.AUTHORIZATION, auth);
+                    }
+                })
+                .exchangeToMono(resp ->
+                        resp.toEntity(String.class)
                 );
     }
 }

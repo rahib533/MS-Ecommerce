@@ -63,7 +63,7 @@ public class OrderService {
         Order createdOrder = orderRepository.save(order);
 
         OrderCreatedEvent orderCreatedEvent = new OrderCreatedEvent(createdOrder.getId(), createOrderRequest.getProductId(),
-                createOrderRequest.getCustomerID(), "1234567890", createOrderRequest.getCount());
+                createOrderRequest.getCustomerID(), account.getAccountNumber(), createOrderRequest.getCount());
         orderEventProducer.publishOrderCreated(orderCreatedEvent);
         return orderDtoConverter.convertToOrderDto(createdOrder);
     }
