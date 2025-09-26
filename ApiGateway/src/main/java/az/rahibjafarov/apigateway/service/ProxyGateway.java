@@ -1,5 +1,6 @@
 package az.rahibjafarov.apigateway.service;
 
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -8,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 
 import java.net.URI;
+import java.util.List;
 
 @Service
 public class ProxyGateway {
@@ -17,12 +19,35 @@ public class ProxyGateway {
         this.client = client;
     }
 
-    public Mono<ResponseEntity<String>> get(String targetUri, ServerHttpRequest incoming) {
+    public <T> Mono<ResponseEntity<List<T>>> getList(String targetUri,
+                                                     ServerHttpRequest incoming,
+                                                     ParameterizedTypeReference<List<T>> typeRef) {
         return client.get()
                 .uri(appendQuery(URI.create(targetUri), incoming))
                 .headers(h -> propagateHeaders(incoming, h))
-                .exchangeToMono(resp -> resp.toEntity(String.class));
+                .exchangeToMono(resp -> resp.toEntity(typeRef));
     }
+
+    public <T> Mono<ResponseEntity<T>> get(String targetUri,
+                                                     ServerHttpRequest incoming,
+                                                     ParameterizedTypeReference<T> typeRef) {
+        return client.get()
+                .uri(appendQuery(URI.create(targetUri), incoming))
+                .headers(h -> propagateHeaders(incoming, h))
+                .exchangeToMono(resp -> resp.toEntity(typeRef));
+    }
+
+    public <T, R> Mono<ResponseEntity<R>> post(String targetUri,
+                                               ServerHttpRequest incoming,
+                                               T body,
+                                               ParameterizedTypeReference<R> typeRef) {
+        return client.post()
+                .uri(appendQuery(URI.create(targetUri), incoming))
+                .headers(h -> propagateHeaders(incoming, h))
+                .bodyValue(body)
+                .exchangeToMono(resp -> resp.toEntity(typeRef));
+    }
+
 
     private void propagateHeaders(ServerHttpRequest incoming, HttpHeaders out) {
         String auth = incoming.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
